@@ -4,22 +4,25 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
-import helmet from helmet;
+import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { register } from './controllers/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config();
+
 const app = express();
+// Initialize the middlewares
 //Middlewares in express are functions that can process or manipulate incoming HTTP requests or outgoing responses before they reach their final destination
 app.use(express.json())
 app.use(helmet())
-app.use(helmet.crossOriginResourcePolicy({policy : "cross-origin"}))
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }))
 app.use(morgan('common'))
-app.use(bodyParser.json({limit: "30mb", extended: true}))
-app.use(bodyParser.urlencoded({limit: "30mb", extended: true}))
+app.use(bodyParser.json({ limit: "30mb", extended: true }))
+app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }))
 app.use(cors());
 app.use("/assets", express.static(path.join(__dirname, "public/assets")))
 
@@ -32,4 +35,21 @@ const storage = multer.diskStorage({
         cb(null, file.originalname)
     }
 })
-const upload = multer({storage: storage})
+const upload = multer({ storage: storage })
+
+//Routes with files
+app.post("/auth/register", upload.single("picture"), register)
+
+
+//Mongoose setup
+const PORT = process.env.PORT || 5000;
+mongoose.connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`)
+    });
+}).catch((err) => {
+    console.log(err)
+})
